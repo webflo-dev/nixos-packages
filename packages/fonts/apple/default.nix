@@ -1,65 +1,56 @@
-{ lib
-, stdenvNoCC
-, fetchurl
-, p7zip
-}:
+{ pkgs, ... }:
+
 let
-  sources = {
-    sf-pro = {
-      url =
-        "https://devimages-cdn.apple.com/design/resources/download/SF-Pro.dmg";
-      sha256 = "sha256-P69DHx/V0NoDcI6jrZdlhbpjrdHo8DEGT+2yg5jYw/M=";
-    };
-    sf-mono = {
-      url =
-        "https://devimages-cdn.apple.com/design/resources/download/SF-Mono.dmg";
-      sha256 = "sha256-8niJPk3hGfK1USIs9eoxZ6GlM4aZ7ZObmQj2Zomj+Go=";
-    };
-    new-york = {
-      url =
-        "https://devimages-cdn.apple.com/design/resources/download/NY.dmg";
-      sha256 = "sha256-P69DHx/V0NoDcI6jrZdlhbpjrdHo8DEGT+2yg5jYw/O=";
-    };
-    sf-symbols = {
-      url = "https://devimages-cdn.apple.com/design/resources/download/SF-Symbols-5.dmg";
-    };
-  };
+  mkFontDerivation = ({ name, url, sha256 }:
+    pkgs.stdenvNoCC.mkDerivation {
+      pname = "${name}-font";
+      version = "1.0";
 
-  derivation = name: value: stdenvNoCC.mkDerivation {
-    pname = "${name}-font";
-    version = "1.0";
-    meta = with lib; {
-      homepage = "https://developer.apple.com/fonts";
-      description = "Apple fonts";
-      platforms = platforms.all;
-    };
+      src = pkgs.fetchurl {
+        url = url;
+        sha256 = sha256;
+      };
 
-    dontBuild = true;
-    dontUnpack = true;
-    dontConfigure = true;
+      nativeBuildInputs = [ pkgs.p7zip ];
 
-    src = fetchurl {
-      url = value.url;
-      sha256 = value.sha256;
-    };
+      unpackCmd = ''
+        7z x $curSrc
+        find . -name "*.pkg" -print -exec 7z x {} \;
+        find . -name "Payload~" -print -exec 7z x {} \;
+      '';
 
-    nativeBuildInputs = [ p7zip ];
+      sourceRoot = "./Library/Fonts";
 
-    unpackCmd = ''
-      7z x $curSrc
-      find . -name "*.pkg" -print -exec 7z x {} \;
-      find . -name "Payload~" -print -exec 7z x {} \;
-    '';
+      dontBuild = true;
 
-    sourceRoot = "./Library/Fonts";
+      installPhase = ''
+        find . -name '*.ttf' -exec install -m444 -Dt $out/share/fonts/truetype {} \;
+        find . -name '*.otf' -exec install -m444 -Dt $out/share/fonts/opentype {} \;
+      '';
 
-    installPhase = ''
-      find . -name '*.ttf' -exec install -m444 -Dt $out/share/fonts/truetype {} \;
-      find . -name '*.otf' -exec install -m444 -Dt $out/share/fonts/opentype {} \;
-    '';
-
-  };
+      meta = with pkgs.lib; {
+        homepage = "https://developer.apple.com/fonts/";
+        description = "Apple fonts";
+        # license = licenses.unfree;
+        maintainers = [ maintainers.pinpox ];
+      };
+    });
 in
-lib.mapAttrs derivation sources
+{
+  sf-pro = mkFontDerivation {
+    name = "sf-pro";
+    url = "https://devimages-cdn.apple.com/design/resources/download/SF-Pro.dmg";
+    sha256 = "sha256-nkuHge3/Vy8lwYx9z+pvsQZfzrNIP4K0OutpPl4yXn0=";
+  };
+  sf-mono = mkFontDerivation {
+    name = "sf-mono";
+    url = "https://devimages-cdn.apple.com/design/resources/download/SF-Mono.dmg";
+    sha256 = "sha256-pqkYgJZttKKHqTYobBUjud0fW79dS5tdzYJ23we9TW4=";
+  };
+  new-york = mkFontDerivation {
+    name = "new-york";
+    url = "https://devimages-cdn.apple.com/design/resources/download/NY.dmg";
+    sha256 = "sha256-XOiWc4c7Yah+mM7axk8g1gY12vXamQF78Keqd3/0/cE=";
+  };
 
-
+}
