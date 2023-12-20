@@ -1,17 +1,17 @@
-{ pkgs, ... }:
+{ lib, stdenvNoCC, fetchurl, p7zip, ... }:
 
 let
   mkFontDerivation = ({ name, url, sha256 }:
-    pkgs.stdenvNoCC.mkDerivation {
+    stdenvNoCC.mkDerivation {
       pname = "${name}-font";
       version = "1.0";
 
-      src = pkgs.fetchurl {
+      src = fetchurl {
         url = url;
         sha256 = sha256;
       };
 
-      nativeBuildInputs = [ pkgs.p7zip ];
+      nativeBuildInputs = [ p7zip ];
 
       unpackCmd = ''
         7z x $curSrc
@@ -28,7 +28,7 @@ let
         find . -name '*.otf' -exec install -m444 -Dt $out/share/fonts/opentype {} \;
       '';
 
-      meta = with pkgs.lib; {
+      meta = with lib; {
         homepage = "https://developer.apple.com/fonts/";
         description = "Apple fonts";
         # license = licenses.unfree;

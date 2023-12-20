@@ -7,14 +7,17 @@
 
   outputs = { self, nixpkgs, ... }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      # System types to support.
+      supportedSystems = [ "x86_64-linux" /*"x86_64-darwin" "aarch64-linux" "aarch64-darwin"*/ ];
 
-      fonts-apple = import ./packages/fonts/apple { inherit pkgs; };
-      fonts-luciole = import ./packages/fonts/luciole { inherit pkgs; };
+      # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+
+      # Nixpkgs instantiated for supported system types.
+      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
     in
     {
-      packages.${system} = fonts-apple // fonts-luciole;
-      defaultPackage.${system} = fonts-luciole.luciole;
+      packages = forAllSystems (system: import ./packages { pkgs = nixpkgsFor.${system}; });
+      defaultPackage = forAllSystems (system: self.packages.${ system}.font-luciole);
     };
 }
