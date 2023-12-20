@@ -17,7 +17,7 @@
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
     in
     {
-      packages = forAllSystems (system: import ./packages { pkgs = nixpkgsFor.${system}; });
-      defaultPackage = forAllSystems (system: self.packages.${ system}.font-luciole);
+      packages = forAllSystems (system: nixpkgsFor.${system}.callPackage ./packages { });
+      defaultPackage = forAllSystems (system: self.packages.${system}.fonts.luciole);
     };
 }
